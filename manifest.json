@@ -1,0 +1,15 @@
+{
+  "manifest_version": 2,
+  "name": "JIRA Inflation Tracker",
+  "description": "Facilitates bug resolvers to keep track on priority inflation on JIRA issues",
+  "version": "1.0",
+  "background": {
+    "scripts": [
+      "event_script.js"
+    ],
+    "persistent": false
+  },
+  "permissions": [
+    "*://issues.apache.org/*"
+  ]
+}
