@@ -6,6 +6,8 @@
 
 //TODO: Temporary values for testing.
 var project = "OPENJPA";
+var maximumReputation = 1.0;
+var inflationPenalty = 0.1;
 
 var projectJql = "project=" + project + "+order+by+created+desc";
 var openStatus = "open";
@@ -19,19 +21,35 @@ var host = "https://issues.apache.org/jira";
 var searchService = host + "/rest/api/2/search?";
 var openIssuesQueryString = "jql=" + projectJql + "&status=" + openStatus + "&maxResults=" + maxResults;
 
-function getEmptyReportersObject(parsedResponse) {
+var reputationScore = {};
+
+function startDefaultReputationMap(parsedResponse) {
     "use strict";
-    var reputationScore = {};
     var reporter;
     parsedResponse.issues.forEach(function (issue) {
         reporter = issue.fields.reporter.name;
-        reputationScore[reporter] = 0;
+        reputationScore[reporter] = maximumReputation;
     });
-
-    return reputationScore;
 }
 
-function getReportersReputation(reporterName) {
+function reputationScoresReady() {
+    "use strict";
+    console.log("READY: reputationScore", reputationScore);
+}
+
+function updateReportersReputation(reporterName, potentialInflatedIssues) {
+    "use strict";
+    if (potentialInflatedIssues.issues.length > 0) {
+        console.log("reporterName", reporterName, "potentialInflatedIssues", potentialInflatedIssues);
+
+        // TODO: This is an over-aproximation. We need to refine that the resolver is not the reporter and that the
+        // priority changer is the resolver.
+        var inflatedIssues = potentialInflatedIssues.issues.length;
+        reputationScore[reporterName] = Math.max(0.0, maximumReputation - inflatedIssues * inflationPenalty);
+    }
+}
+
+function getReportersReputation(reporterName, index, reporterList) {
     "use strict";
 
     var priorityChangesJql = "reporter=" + reporterName.replace(/@/g, "\\u0040") + "+and+priority+changed+and+status+was+" + resolvedStatus;
@@ -43,8 +61,9 @@ function getReportersReputation(reporterName) {
         if (changedPrioritiesXhr.readyState === 4 && changedPrioritiesXhr.status === 200) {
             var potentialInflatedIssues = JSON.parse(changedPrioritiesXhr.responseText);
 
-            if (potentialInflatedIssues.issues.length > 0) {
-                console.log("reporterName", reporterName, "potentialInflatedIssues", potentialInflatedIssues);
+            updateReportersReputation(reporterName, potentialInflatedIssues);
+            if (index === reporterList.length - 1) {
+                reputationScoresReady();
             }
         }
     };
@@ -61,9 +80,9 @@ openIssuesXhr.onreadystatechange = function () {
         var parsedResponse = JSON.parse(openIssuesXhr.responseText);
         console.log("parsedResponse", parsedResponse);
 
-        var reputationScore = getEmptyReportersObject(parsedResponse);
+        startDefaultReputationMap(parsedResponse);
 
-        console.log("reputationScore", reputationScore);
+        console.log("Default reputationScore", reputationScore);
         Object.keys(reputationScore).forEach(getReportersReputation);
     }
 
