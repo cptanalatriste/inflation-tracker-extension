@@ -2,7 +2,8 @@
  * Created by Carlos G. Gavidia on 07/06/2017.
  *
  * Popup style taken from: https://codepen.io/ldesanto/full/pEftw/
- * Icons provided here: http://materializecss.com/icons.html */
+ * Icons provided here: http://materializecss.com/icons.html
+ * And here: https://www.iconfinder.com/icons/1688867/business_management_person_reputation_icon#size=128 */
 
 var issueTableId = "issuesTable";
 var tableHeaderId = "tableHeader";
@@ -15,8 +16,10 @@ var openStatus = "open";
 var resolvedStatus = "resolved";
 var maxResults = "20";
 var optimalThreshold = 0.7;
+var maximumSummarySize = 50;
 
-var projectJql = "project=" + project + "+order+by+created+desc";
+var projectJql = "project=" + project + "+and+status=" + openStatus
+    + "+and+assignee+is+null+order+by+priority+desc,created+desc";
 
 //TODO: Include the parameter "fields" in the request
 //TODO: This requires that the user is already logged in the target JIRA system. We need an approapriate error message
@@ -27,7 +30,7 @@ var protocol = "https://";
 var server = "issues.apache.org/jira";
 var host = protocol + server;
 var searchService = host + "/rest/api/2/search?";
-var openIssuesQueryString = "jql=" + projectJql + "&status=" + openStatus + "&maxResults=" + maxResults;
+var openIssuesQueryString = "jql=" + projectJql + "&maxResults=" + maxResults;
 
 var unassignedIssues = null;
 var reputationScore = {};
@@ -41,6 +44,23 @@ function startDefaultReputationMap() {
     });
 }
 
+function openIssueInTab(mouseEvent) {
+    "use strict";
+    console.log("mouseEvent", mouseEvent);
+
+    var source = mouseEvent.target || mouseEvent.srcElement;
+    if (source.textContent === "pageview") {
+        var issueId = source.id;
+        var issueUrl = protocol + server + "/browse/" + issueId;
+
+        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+            var currentTab = tabs[0];
+            chrome.tabs.update(currentTab.id, {url: issueUrl});
+        });
+    }
+
+}
+
 function addIssuesToHTMLTable(unassigedIssueList) {
     "use strict";
 
@@ -50,15 +70,25 @@ function addIssuesToHTMLTable(unassigedIssueList) {
     unassigedIssueList.forEach(function (issueInformation) {
         var issueRow = document.createElement("tr");
         var rowContent = "<td>" + issueInformation.key + "</td><td>" + issueInformation.summary + "</td>";
-        rowContent += "<td><i class='material-icons button' title='Reputation: " + issueInformation.reporterScore + "'>" + issueInformation.scoreIcon;
-        rowContent += "</i><i class='material-icons button'>pageview</i></td>";
+        rowContent += "<td><i class='material-icons button' title='" + issueInformation.reporter + " reputation is";
+        rowContent += " " + issueInformation.reporterScore + "'>" + issueInformation.scoreIcon;
+        rowContent += "</i><i class='material-icons button' id='" + issueInformation.key + "' title='Open issue ";
+        rowContent += issueInformation.key + "'>pageview</i></td>";
 
         issueRow.innerHTML = rowContent;
         issueTable.appendChild(issueRow);
     });
 
-    console.log("Issues loaded!");
     tableHeader.textContent = unassigedIssueList.length + " issues retrieved for project " + project + " at " + server;
+
+    var inboxControls = document.getElementsByTagName("i");
+
+    Array.from(inboxControls).forEach(function (control) {
+        control.addEventListener("click", openIssueInTab);
+    });
+
+    console.log("Issues loaded!");
+
 }
 
 function reputationScoresReady() {
@@ -73,14 +103,29 @@ function reputationScoresReady() {
             : "thumb_down";
 
         var scoreAsPercentage = reporterScore * 100;
+
+        var priorityId = null;
+        var priorityName = null;
+
+        if (issue.fields.priority) {
+            priorityId = issue.fields.priority.id;
+            priorityName = issue.fields.priority.name;
+        }
+
+        var rawSummary = issue.fields.summary;
+        var trimmedSummary = rawSummary.length > maximumSummarySize
+            ? rawSummary.substring(0, maximumSummarySize - 3) + "..."
+            : rawSummary;
+
+
         unassigedIssueList.push({
             key: issue.key,
-            summary: issue.fields.summary,
+            summary: trimmedSummary,
             reporter: issue.fields.reporter.name,
             rawScore: reporterScore,
             reporterScore: scoreAsPercentage.toFixed(2) + "%",
-            priorityId: issue.fields.priority.id, //TODO: Not sure if this ID is sorted in the hierarchy
-            priorityName: issue.fields.priority.name,
+            priorityId: priorityId, //TODO: Not sure if this ID is sorted in the hierarchy
+            priorityName: priorityName,
             scoreIcon: reputationIcon
         });
     });
@@ -117,7 +162,8 @@ function getReportersReputation(reporterName, index, reporterList) {
     "use strict";
 
     var priorityChangesJql = "reporter=" + reporterName.replace(/@/g, "\\u0040") + "+and+priority+changed+and+status+was+" + resolvedStatus;
-    var changedPrioritiesUrl = searchService + "jql=" + priorityChangesJql + "&maxResults=" + maxResults;
+    priorityChangesJql += "+and+status+was+not+" + resolvedStatus + "+by+" + reporterName;
+    var changedPrioritiesUrl = searchService + "jql=" + priorityChangesJql + "&maxResults=" + maxResults + "&expand=changelog";
 
     var changedPrioritiesXhr = new XMLHttpRequest();
     changedPrioritiesXhr.onreadystatechange = function () {
