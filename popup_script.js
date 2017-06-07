@@ -13,14 +13,14 @@ var project = "OPENJPA";
 var maximumReputation = 1.0;
 var inflationPenalty = 0.1;
 var openStatus = "open";
-var resolvedStatus = "resolved";
+var resolvedStatus = "Resolved";
 var maxResults = "20";
 var optimalThreshold = 0.7;
 var maximumSummarySize = 50;
 
-var projectJql = "project=" + project + "+and+status=" + openStatus
-    + "+and+assignee+is+null+order+by+priority+desc,created+desc";
+var projectJql = "project=" + project + "+and+status=" + openStatus + "+and+assignee+is+null+order+by+priority+desc,created+desc";
 
+//TODO: Also, instructions are pending.
 //TODO: Include the parameter "fields" in the request
 //TODO: This requires that the user is already logged in the target JIRA system. We need an approapriate error message
 //if it not the case
@@ -34,6 +34,9 @@ var openIssuesQueryString = "jql=" + projectJql + "&maxResults=" + maxResults;
 
 var unassignedIssues = null;
 var reputationScore = {};
+var reporterRequestCounter = 0;
+
+// var chrome = null;
 
 function startDefaultReputationMap() {
     "use strict";
@@ -146,6 +149,99 @@ function reputationScoresReady() {
     addIssuesToHTMLTable(unassigedIssueList);
 }
 
+function getResolver(changeLogHistories) {
+    "use strict";
+    var resolver = null;
+    changeLogHistories.some(function (history) {
+        var changer = history.author.name;
+
+        history.items.some(function (changeItem) {
+
+            if (changeItem.field === "status" && changeItem.toString === resolvedStatus) {
+                resolver = changer;
+                return true;
+            }
+        });
+
+        if (resolver) {
+            return true;
+        }
+    });
+
+    return resolver;
+}
+
+function getResolverPriority(changeLogHistories, resolver) {
+    "use strict";
+    var resolverPriority = null;
+
+    changeLogHistories.some(function (history) {
+
+        if (history.author.name === resolver) {
+            history.items.some(function (changeItem) {
+                if (changeItem.field === "priority") {
+                    resolverPriority = changeItem.toString;
+                    return true;
+                }
+            });
+
+            if (resolverPriority) {
+                return true;
+            }
+        }
+    });
+
+    return resolverPriority;
+}
+
+function getOriginalPriority(changeLogHistories) {
+    "use strict";
+    var originalPriority = null;
+    changeLogHistories.some(function (history) {
+        history.items.some(function (changeItem) {
+            if (changeItem.field === "priority") {
+                originalPriority = changeItem.fromString;
+                return true;
+            }
+        });
+
+        if (originalPriority) {
+            return true;
+        }
+    });
+
+    return originalPriority;
+
+}
+
+function isInflatedIssue(issue) {
+    "use strict";
+    var changeLogHistories = issue.changelog.histories;
+
+    var resolver = null;
+    var resolverPriority = null;
+    var originalPriority = null;
+    var isInflated = false;
+    resolver = getResolver(changeLogHistories);
+
+    if (resolver) {
+        resolverPriority = getResolverPriority(changeLogHistories, resolver);
+    }
+
+    if (resolverPriority) {
+        originalPriority = getOriginalPriority(changeLogHistories);
+    }
+
+    console.log("issue", issue, "resolver", resolver, "resolverPriority", resolverPriority, "originalPriority", originalPriority);
+
+    if (resolverPriority && (resolverPriority !== originalPriority)) {
+        isInflated = true;
+    }
+
+    return isInflated;
+
+}
+
 function updateReportersReputation(reporterName, potentialInflatedIssues) {
     "use strict";
     if (potentialInflatedIssues.issues.length > 0) {
@@ -153,12 +249,20 @@ function updateReportersReputation(reporterName, potentialInflatedIssues) {
 
         // TODO: This is an over-aproximation. We need to refine that the resolver is not the reporter and that the
         // priority changer is the resolver.
-        var inflatedIssues = potentialInflatedIssues.issues.length;
+        var inflatedIssues = 0;
+        potentialInflatedIssues.issues.forEach(function (issue) {
+            if (isInflatedIssue(issue)) {
+                inflatedIssues += 1;
+            }
+        });
+
         reputationScore[reporterName] = Math.max(0.0, maximumReputation - inflatedIssues * inflationPenalty);
+        console.log("reporterName", reporterName, "inflatedIssues", inflatedIssues, "reputationScore[reporterName]", reputationScore[reporterName]);
+
     }
 }
 
-function getReportersReputation(reporterName, index, reporterList) {
+function getReportersReputation(reporterName) {
     "use strict";
 
     var priorityChangesJql = "reporter=" + reporterName.replace(/@/g, "\\u0040") + "+and+priority+changed+and+status+was+" + resolvedStatus;
@@ -172,7 +276,8 @@ function getReportersReputation(reporterName, index, reporterList) {
             var potentialInflatedIssues = JSON.parse(changedPrioritiesXhr.responseText);
 
             updateReportersReputation(reporterName, potentialInflatedIssues);
-            if (index === reporterList.length - 1) {
+            reporterRequestCounter -= 1;
+            if (reporterRequestCounter === 0) {
                 reputationScoresReady();
             }
         }
@@ -198,6 +303,7 @@ function queryIssuesFromServer() {
             startDefaultReputationMap();
 
             console.log("Default reputationScore", reputationScore);
+            reporterRequestCounter = Object.keys(reputationScore).length;
             Object.keys(reputationScore).forEach(getReportersReputation);
         }
 
