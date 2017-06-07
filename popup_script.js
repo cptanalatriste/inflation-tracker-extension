@@ -2,7 +2,7 @@
  * Created by Carlos G. Gavidia on 07/06/2017.
  *
  * Popup style taken from: https://codepen.io/ldesanto/full/pEftw/
- */
+ * Icons provided here: http://materializecss.com/icons.html */
 
 var issueTableId = "issuesTable";
 var tableHeaderId = "tableHeader";
@@ -14,6 +14,7 @@ var inflationPenalty = 0.1;
 var openStatus = "open";
 var resolvedStatus = "resolved";
 var maxResults = "20";
+var optimalThreshold = 0.7;
 
 var projectJql = "project=" + project + "+order+by+created+desc";
 
@@ -49,14 +50,15 @@ function addIssuesToHTMLTable(unassigedIssueList) {
     unassigedIssueList.forEach(function (issueInformation) {
         var issueRow = document.createElement("tr");
         var rowContent = "<td>" + issueInformation.key + "</td><td>" + issueInformation.summary + "</td>";
-        rowContent += "<td><i class='button edit'>edit</i><i class='button delete'>delete</i></td>";
+        rowContent += "<td><i class='material-icons button' title='Reputation: " + issueInformation.reporterScore + "'>" + issueInformation.scoreIcon;
+        rowContent += "</i><i class='material-icons button'>pageview</i></td>";
 
         issueRow.innerHTML = rowContent;
         issueTable.appendChild(issueRow);
     });
 
     console.log("Issues loaded!");
-    tableHeader.textContent = unassigedIssueList.length + " issues retrieved for project " + project;
+    tableHeader.textContent = unassigedIssueList.length + " issues retrieved for project " + project + " at " + server;
 }
 
 function reputationScoresReady() {
@@ -65,22 +67,30 @@ function reputationScoresReady() {
 
     var unassigedIssueList = [];
     unassignedIssues.forEach(function (issue) {
+        var reporterScore = reputationScore[issue.fields.reporter.name];
+        var reputationIcon = reporterScore >= optimalThreshold
+            ? "thumb_up"
+            : "thumb_down";
+
+        var scoreAsPercentage = reporterScore * 100;
         unassigedIssueList.push({
             key: issue.key,
             summary: issue.fields.summary,
             reporter: issue.fields.reporter.name,
-            reporterScore: reputationScore[issue.fields.reporter.name],
+            rawScore: reporterScore,
+            reporterScore: scoreAsPercentage.toFixed(2) + "%",
             priorityId: issue.fields.priority.id, //TODO: Not sure if this ID is sorted in the hierarchy
-            priorityName: issue.fields.priority.name
+            priorityName: issue.fields.priority.name,
+            scoreIcon: reputationIcon
         });
     });
 
     unassigedIssueList.sort(function (issue, otherIssue) {
-        if (issue.reporterScore > otherIssue.reporterScore) {
+        if (issue.rawScore > otherIssue.rawScore) {
             return -1;
         }
 
-        if (issue.reporterScore < otherIssue.reporterScore) {
+        if (issue.rawScore < otherIssue.rawScore) {
             return 1;
         }
 
@@ -158,17 +168,4 @@ document.addEventListener("DOMContentLoaded", function () {
     "use strict";
 
     queryIssuesFromServer();
-
-    // var searchButton = document.getElementById(searchButtonId);
-    //
-    // console.log("searchButton", searchButton);
-    //
-    // searchButton.addEventListener("click", function () {
-    //     console.log("On click listener ...");
-    //
-    //     var loader = document.getElementById(loaderId);
-    //     loader.classList.remove("mask");
-    //     queryIssuesFromServer();
-    // });
-
 });
