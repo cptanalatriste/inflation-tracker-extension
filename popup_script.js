@@ -5,7 +5,7 @@
  */
 
 var issueTableId = "issuesTable";
-
+var tableHeaderId = "tableHeader";
 
 //TODO: Temporary values for testing.
 var project = "OPENJPA";
@@ -22,7 +22,9 @@ var projectJql = "project=" + project + "+order+by+created+desc";
 //if it not the case
 //TODO: We need to figure out how necessary is this maxResults parameter
 
-var host = "https://issues.apache.org/jira";
+var protocol = "https://";
+var server = "issues.apache.org/jira";
+var host = protocol + server;
 var searchService = host + "/rest/api/2/search?";
 var openIssuesQueryString = "jql=" + projectJql + "&status=" + openStatus + "&maxResults=" + maxResults;
 
@@ -41,7 +43,9 @@ function startDefaultReputationMap() {
 function addIssuesToHTMLTable(unassigedIssueList) {
     "use strict";
 
-    var issueTable = document.getElementById("issuesTable");
+    var issueTable = document.getElementById(issueTableId);
+    var tableHeader = document.getElementById(tableHeaderId);
+
     unassigedIssueList.forEach(function (issueInformation) {
         var issueRow = document.createElement("tr");
         var rowContent = "<td>" + issueInformation.key + "</td><td>" + issueInformation.summary + "</td>";
@@ -52,7 +56,7 @@ function addIssuesToHTMLTable(unassigedIssueList) {
     });
 
     console.log("Issues loaded!");
-
+    tableHeader.textContent = unassigedIssueList.length + " issues retrieved for project " + project;
 }
 
 function reputationScoresReady() {
@@ -127,6 +131,9 @@ function queryIssuesFromServer() {
 
     var openIssuesXhr = new XMLHttpRequest();
     var openIssuesUrl = searchService + openIssuesQueryString;
+    var tableHeader = document.getElementById(tableHeaderId);
+
+    tableHeader.textContent += " at " + server;
     openIssuesXhr.onreadystatechange = function () {
         if (openIssuesXhr.readyState === 4 && openIssuesXhr.status === 200) {
             unassignedIssues = JSON.parse(openIssuesXhr.responseText).issues;
@@ -149,5 +156,19 @@ function queryIssuesFromServer() {
 console.log("Loading popup script ...");
 document.addEventListener("DOMContentLoaded", function () {
     "use strict";
+
     queryIssuesFromServer();
+
+    // var searchButton = document.getElementById(searchButtonId);
+    //
+    // console.log("searchButton", searchButton);
+    //
+    // searchButton.addEventListener("click", function () {
+    //     console.log("On click listener ...");
+    //
+    //     var loader = document.getElementById(loaderId);
+    //     loader.classList.remove("mask");
+    //     queryIssuesFromServer();
+    // });
+
 });

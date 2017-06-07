@@ -3,14 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>InflationTracker</title>
+    <link rel="stylesheet" href="ajax_loader.css">
     <link rel="stylesheet" href="flat_table.css">
+    <link rel="stylesheet" href="form.css">
+
     <script src="popup_script.js"></script>
 </head>
 <body>
-<table>
+
+<table id="tableContainer" class="mask">
     <thead>
     <tr>
-        <th colspan="3">Issues Pending Assignment</th>
+        <th id="tableHeader" colspan="3">Connecting to JIRA Server</th>
     </tr>
     <tr>
         <th>Key</th>
@@ -20,5 +24,6 @@
     <tbody id="issuesTable">
     </tbody>
 </table>
+
 </body>
 </html>
