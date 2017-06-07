@@ -1,20 +1,25 @@
 /**
- * Created by Carlos G. Gavidia on 06/06/2017.
+ * Created by Carlos G. Gavidia on 07/06/2017.
+ *
+ * Popup style taken from: https://codepen.io/ldesanto/full/pEftw/
  */
 
+var issueTableId = "issuesTable";
 
 
 //TODO: Temporary values for testing.
 var project = "OPENJPA";
 var maximumReputation = 1.0;
 var inflationPenalty = 0.1;
-
-var projectJql = "project=" + project + "+order+by+created+desc";
 var openStatus = "open";
 var resolvedStatus = "resolved";
 var maxResults = "20";
+
+var projectJql = "project=" + project + "+order+by+created+desc";
+
 //TODO: Include the parameter "fields" in the request
-//TODO: This requires that the user is already logged in the target JIRA system.
+//TODO: This requires that the user is already logged in the target JIRA system. We need an approapriate error message
+//if it not the case
 //TODO: We need to figure out how necessary is this maxResults parameter
 
 var host = "https://issues.apache.org/jira";
@@ -31,6 +36,23 @@ function startDefaultReputationMap() {
         reporter = issue.fields.reporter.name;
         reputationScore[reporter] = maximumReputation;
     });
+}
+
+function addIssuesToHTMLTable(unassigedIssueList) {
+    "use strict";
+
+    var issueTable = document.getElementById("issuesTable");
+    unassigedIssueList.forEach(function (issueInformation) {
+        var issueRow = document.createElement("tr");
+        var rowContent = "<td>" + issueInformation.key + "</td><td>" + issueInformation.summary + "</td>";
+        rowContent += "<td><i class='button edit'>edit</i><i class='button delete'>delete</i></td>";
+
+        issueRow.innerHTML = rowContent;
+        issueTable.appendChild(issueRow);
+    });
+
+    console.log("Issues loaded!");
+
 }
 
 function reputationScoresReady() {
@@ -62,7 +84,7 @@ function reputationScoresReady() {
     });
 
     console.log("unassigedIssueList", unassigedIssueList);
-
+    addIssuesToHTMLTable(unassigedIssueList);
 }
 
 function updateReportersReputation(reporterName, potentialInflatedIssues) {
@@ -100,23 +122,32 @@ function getReportersReputation(reporterName, index, reporterList) {
     changedPrioritiesXhr.send();
 }
 
-var openIssuesXhr = new XMLHttpRequest();
-var openIssuesUrl = searchService + openIssuesQueryString;
-openIssuesXhr.onreadystatechange = function () {
+function queryIssuesFromServer() {
     "use strict";
-    if (openIssuesXhr.readyState === 4 && openIssuesXhr.status === 200) {
-        unassignedIssues = JSON.parse(openIssuesXhr.responseText).issues;
-        console.log("unassignedIssues", unassignedIssues);
 
-        startDefaultReputationMap();
+    var openIssuesXhr = new XMLHttpRequest();
+    var openIssuesUrl = searchService + openIssuesQueryString;
+    openIssuesXhr.onreadystatechange = function () {
+        if (openIssuesXhr.readyState === 4 && openIssuesXhr.status === 200) {
+            unassignedIssues = JSON.parse(openIssuesXhr.responseText).issues;
+            console.log("unassignedIssues", unassignedIssues);
 
-        console.log("Default reputationScore", reputationScore);
-        Object.keys(reputationScore).forEach(getReportersReputation);
-    }
+            startDefaultReputationMap();
 
-};
+            console.log("Default reputationScore", reputationScore);
+            Object.keys(reputationScore).forEach(getReportersReputation);
+        }
 
-openIssuesXhr.open("GET", openIssuesUrl, true);
+    };
 
-console.log("Getting open issues using: " + searchService + openIssuesQueryString);
-openIssuesXhr.send();
+    openIssuesXhr.open("GET", openIssuesUrl, true);
+
+    console.log("Getting open issues using: " + searchService + openIssuesQueryString);
+    openIssuesXhr.send();
+}
+
+console.log("Loading popup script ...");
+document.addEventListener("DOMContentLoaded", function () {
+    "use strict";
+    queryIssuesFromServer();
+});
