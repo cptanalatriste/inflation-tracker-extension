@@ -9,6 +9,14 @@
     "default_popup": "popup.html"
   },
   "permissions": [
-    "*://issues.apache.org/*"
-  ]
+    "storage"
+  ],
+  "optional_permissions": [
+    "http://*/",
+    "https://*/"
+  ],
+  "options_ui": {
+    "page": "options_page.html",
+    "chrome_style": true
+  }
 }

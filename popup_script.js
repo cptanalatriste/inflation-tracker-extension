@@ -7,18 +7,18 @@
 
 var issueTableId = "issuesTable";
 var tableHeaderId = "tableHeader";
+var loadLinkId = "connect";
+var optionsLinkId = "options";
 
 //TODO: Temporary values for testing.
-var project = "OPENJPA";
-var maximumReputation = 1.0;
-var inflationPenalty = 0.1;
-var openStatus = "open";
-var resolvedStatus = "Resolved";
-var maxResults = "20";
-var optimalThreshold = 0.7;
-var maximumSummarySize = 50;
-
-var projectJql = "project=" + project + "+and+status=" + openStatus + "+and+assignee+is+null+order+by+priority+desc,created+desc";
+var defaultOptions = {
+    inflationPenalty: 0.1,
+    resolvedStatus: "Resolved",
+    maxResults: "20",
+    optimalThreshold: 0.7,
+    host: "http://myjiraserver",
+    projectJql: "project=MYPROJECT+and+status=Open+and+assignee+is+null+order+by+priority+desc,created+desc"
+};
 
 //TODO: Also, instructions are pending.
 //TODO: Include the parameter "fields" in the request
@@ -26,15 +26,13 @@ var projectJql = "project=" + project + "+and+status=" + openStatus + "+and+assi
 //if it not the case
 //TODO: We need to figure out how necessary is this maxResults parameter
 
-var protocol = "https://";
-var server = "issues.apache.org/jira";
-var host = protocol + server;
-var searchService = host + "/rest/api/2/search?";
-var openIssuesQueryString = "jql=" + projectJql + "&maxResults=" + maxResults;
-
+var jiraRestApi = "/rest/api/2/search?";
 var unassignedIssues = null;
 var reputationScore = {};
 var reporterRequestCounter = 0;
+var maximumSummarySize = 50;
+var maximumReputation = 1.0;
+var extentionOptions = defaultOptions;
 
 // var chrome = null;
 
@@ -54,7 +52,7 @@ function openIssueInTab(mouseEvent) {
     var source = mouseEvent.target || mouseEvent.srcElement;
     if (source.textContent === "pageview") {
         var issueId = source.id;
-        var issueUrl = protocol + server + "/browse/" + issueId;
+        var issueUrl = extentionOptions.host + "/browse/" + issueId;
 
         chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
             var currentTab = tabs[0];
@@ -82,7 +80,7 @@ function addIssuesToHTMLTable(unassigedIssueList) {
         issueTable.appendChild(issueRow);
     });
 
-    tableHeader.textContent = unassigedIssueList.length + " issues retrieved for project " + project + " at " + server;
+    tableHeader.textContent = unassigedIssueList.length + " issues retrieved from " + extentionOptions.host;
 
     var inboxControls = document.getElementsByTagName("i");
 
@@ -101,7 +99,7 @@ function reputationScoresReady() {
     var unassigedIssueList = [];
     unassignedIssues.forEach(function (issue) {
         var reporterScore = reputationScore[issue.fields.reporter.name];
-        var reputationIcon = reporterScore >= optimalThreshold
+        var reputationIcon = reporterScore >= extentionOptions.optimalThreshold
             ? "thumb_up"
             : "thumb_down";
 
@@ -157,7 +155,7 @@ function getResolver(changeLogHistories) {
 
         history.items.some(function (changeItem) {
 
-            if (changeItem.field === "status" && changeItem.toString === resolvedStatus) {
+            if (changeItem.field === "status" && changeItem.toString === extentionOptions.resolvedStatus) {
                 resolver = changer;
                 return true;
             }
@@ -256,7 +254,7 @@ function updateReportersReputation(reporterName, potentialInflatedIssues) {
             }
         });
 
-        reputationScore[reporterName] = Math.max(0.0, maximumReputation - inflatedIssues * inflationPenalty);
+        reputationScore[reporterName] = Math.max(0.0, maximumReputation - inflatedIssues * extentionOptions.inflationPenalty);
         console.log("reporterName", reporterName, "inflatedIssues", inflatedIssues, "reputationScore[reporterName]", reputationScore[reporterName]);
 
     }
@@ -265,9 +263,13 @@ function updateReportersReputation(reporterName, potentialInflatedIssues) {
 function getReportersReputation(reporterName) {
     "use strict";
 
-    var priorityChangesJql = "reporter=" + reporterName.replace(/@/g, "\\u0040") + "+and+priority+changed+and+status+was+" + resolvedStatus;
-    priorityChangesJql += "+and+status+was+not+" + resolvedStatus + "+by+" + reporterName;
-    var changedPrioritiesUrl = searchService + "jql=" + priorityChangesJql + "&maxResults=" + maxResults + "&expand=changelog";
+    var searchService = extentionOptions.host + jiraRestApi;
+
+    var priorityChangesJql = "reporter=" + reporterName.replace(/@/g, "\\u0040") + "+and+priority+changed+and+status+was+" + extentionOptions.resolvedStatus;
+    priorityChangesJql += "+and+status+was+not+" + extentionOptions.resolvedStatus + "+by+" + reporterName;
+
+    //TODO: Analyse if its necesessary using max results here.
+    var changedPrioritiesUrl = searchService + "jql=" + priorityChangesJql + "&maxResults=" + extentionOptions.maxResults + "&expand=changelog";
 
     var changedPrioritiesXhr = new XMLHttpRequest();
     changedPrioritiesXhr.onreadystatechange = function () {
@@ -291,10 +293,14 @@ function queryIssuesFromServer() {
     "use strict";
 
     var openIssuesXhr = new XMLHttpRequest();
+
+    var searchService = extentionOptions.host + jiraRestApi;
+    var openIssuesQueryString = "jql=" + extentionOptions.projectJql + "&maxResults=" + extentionOptions.maxResults;
     var openIssuesUrl = searchService + openIssuesQueryString;
     var tableHeader = document.getElementById(tableHeaderId);
 
-    tableHeader.textContent += " at " + server;
+    tableHeader.textContent = "Loading issues from " + extentionOptions.host;
+
     openIssuesXhr.onreadystatechange = function () {
         if (openIssuesXhr.readyState === 4 && openIssuesXhr.status === 200) {
             unassignedIssues = JSON.parse(openIssuesXhr.responseText).issues;
@@ -319,5 +325,28 @@ console.log("Loading popup script ...");
 document.addEventListener("DOMContentLoaded", function () {
     "use strict";
 
-    queryIssuesFromServer();
+    var loadLink = document.getElementById(loadLinkId);
+    var optionsLink = document.getElementById(optionsLinkId);
+
+
+    chrome.storage.sync.get(defaultOptions, function (storedParameters) {
+        extentionOptions = storedParameters;
+        console.log("extentionOptions", extentionOptions);
+
+        loadLink.addEventListener("click", function () {
+            chrome.permissions.request({
+                origins: [extentionOptions.host]
+            }, function (granted) {
+                if (granted) {
+                    queryIssuesFromServer();
+                }
+            });
+        });
+    });
+
+
+    optionsLink.addEventListener("click", function () {
+        chrome.runtime.openOptionsPage();
+    });
+
 });

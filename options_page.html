@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inflation Tracker Options Page</title>
+    <script src="options_script.js"></script>
+</head>
+<body>
+<form>
+    <p>
+        <label>
+            JIRA Host
+        </label>
+        <input type="text" name="host"/>
+    </p>
+    <p>
+        <label>
+            Inflation penalty
+        </label>
+        <input type="text" name="inflationPenalty"/>
+    </p>
+    <p>
+
+        <label>
+            Maximum results per request
+        </label>
+        <input type="text" name="maxResults"/>
+    </p>
+    <p>
+        <label>
+            Minimum acceptable reputation
+        </label>
+        <input type="text" name="optimalThreshold"/>
+
+    </p>
+    <p>
+        <label>
+            JQL for issues inbox
+        </label>
+        <input type="text" name="projectJql"/>
+    </p>
+    <p>
+        <label>
+            Status for resolved issues
+        </label>
+
+        <input type="text" name="resolvedStatus"/>
+    </p>
+</form>
+</p>
+<br>
+<div id="status"></div>
+<p class="clear">
+    <input type="button" id="save" value="Save">
+</p>
+</body>
+</html>
