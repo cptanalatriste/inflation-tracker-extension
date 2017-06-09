@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>InflationTracker</title>
-    <link rel="stylesheet" href="flat_table.css">
+    <link rel="stylesheet" href="css/flat_table.css">
+    <link rel="stylesheet" href="css/message_boxes.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script src="popup_script.js"></script>
+    <script src="js/popup_script.js"></script>
 </head>
 <body>
 
 <table id="tableContainer" class="mask">
     <h1>JIRA Inflation Tracker</h1>
-    <p>Before using the extension, make sure you have logged into JIRA and have configured the
+    <p>Before using the extension, make sure you have access to your JIRA instance and have configured the
         <a id="options" href="#">extension options</a> properly. <a id="connect" href="#">Click here to load inbox</a>
     </p>
 
@@ -27,6 +28,6 @@
     <tbody id="issuesTable">
     </tbody>
 </table>
-
+<div id="status" ></div>
 </body>
 </html>

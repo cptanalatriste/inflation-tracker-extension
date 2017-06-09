@@ -11,7 +11,7 @@ var defaultOptions = {
     maxResults: "20",
     optimalThreshold: 0.7,
     host: "http://myjiraserver",
-    projectJql: "project=MYPROJECT+and+status=Open+and+assignee+is+null+order+by+priority+desc,created+desc"
+    projectJql: "project=MYPROJECT+and+status=Open+and+assignee+is+null+order+by+created+desc,priority+desc"
 };
 
 // var chrome = null;
@@ -28,9 +28,11 @@ function saveOptions() {
     chrome.storage.sync.set(parameterValues, function () {
         var status = document.getElementById(statusId);
         status.textContent = "Options saved!";
+        status.classList.add("info");
 
         setTimeout(function () {
             status.textContent = "";
+            status.classList.remove("info", "success", "warning", "error");
         }, 750);
     });
 }

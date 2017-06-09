@@ -3,12 +3,15 @@
  *
  * Popup style taken from: https://codepen.io/ldesanto/full/pEftw/
  * Icons provided here: http://materializecss.com/icons.html
- * And here: https://www.iconfinder.com/icons/1688867/business_management_person_reputation_icon#size=128 */
+ * And here: https://www.iconfinder.com/icons/1688867/business_management_person_reputation_icon#size=128
+ * And also here: http://itweek.deviantart.com/art/Knob-Buttons-Toolbar-icons-73463960*/
 
 var issueTableId = "issuesTable";
 var tableHeaderId = "tableHeader";
 var loadLinkId = "connect";
 var optionsLinkId = "options";
+var statusId = "status";
+
 
 //TODO: Temporary values for testing.
 var defaultOptions = {
@@ -31,6 +34,7 @@ var unassignedIssues = null;
 var reputationScore = {};
 var reporterRequestCounter = 0;
 var maximumSummarySize = 50;
+var maximumKeySize = 11;
 var maximumReputation = 1.0;
 var extentionOptions = defaultOptions;
 
@@ -70,7 +74,7 @@ function addIssuesToHTMLTable(unassigedIssueList) {
 
     unassigedIssueList.forEach(function (issueInformation) {
         var issueRow = document.createElement("tr");
-        var rowContent = "<td>" + issueInformation.key + "</td><td>" + issueInformation.summary + "</td>";
+        var rowContent = "<td>" + issueInformation.trimmedkey + "</td><td>" + issueInformation.summary + "</td>";
         rowContent += "<td><i class='material-icons button' title='" + issueInformation.reporter + " reputation is";
         rowContent += " " + issueInformation.reporterScore + "'>" + issueInformation.scoreIcon;
         rowContent += "</i><i class='material-icons button' id='" + issueInformation.key + "' title='Open issue ";
@@ -90,6 +94,13 @@ function addIssuesToHTMLTable(unassigedIssueList) {
 
     console.log("Issues loaded!");
 
+}
+
+function trimString(originalString, maxLength) {
+    "use strict";
+    return originalString.length > maxLength
+        ? originalString.substring(0, maxLength - 3) + "..."
+        : originalString;
 }
 
 function reputationScoresReady() {
@@ -113,13 +124,10 @@ function reputationScoresReady() {
             priorityName = issue.fields.priority.name;
         }
 
-        var rawSummary = issue.fields.summary;
-        var trimmedSummary = rawSummary.length > maximumSummarySize
-            ? rawSummary.substring(0, maximumSummarySize - 3) + "..."
-            : rawSummary;
-
+        var trimmedSummary = trimString(issue.fields.summary, maximumSummarySize);
 
         unassigedIssueList.push({
+            trimmedkey: trimString(issue.key, maximumKeySize),
             key: issue.key,
             summary: trimmedSummary,
             reporter: issue.fields.reporter.name,
@@ -260,13 +268,27 @@ function updateReportersReputation(reporterName, potentialInflatedIssues) {
     }
 }
 
+
+function showErrorMessage(request) {
+    "use strict";
+
+    var status = document.getElementById(statusId);
+    status.textContent = "Error while connecting to: " + request;
+    status.classList.add("error");
+}
+
+function preprocessReporter(reporterName) {
+    "use strict";
+    return reporterName.replace(/@/g, "\\u0040");
+}
+
 function getReportersReputation(reporterName) {
     "use strict";
 
     var searchService = extentionOptions.host + jiraRestApi;
 
-    var priorityChangesJql = "reporter=" + reporterName.replace(/@/g, "\\u0040") + "+and+priority+changed+and+status+was+" + extentionOptions.resolvedStatus;
-    priorityChangesJql += "+and+status+was+not+" + extentionOptions.resolvedStatus + "+by+" + reporterName;
+    var priorityChangesJql = "reporter=" + preprocessReporter(reporterName) + "+and+priority+changed+and+status+was+" + extentionOptions.resolvedStatus;
+    priorityChangesJql += "+and+status+was+not+" + extentionOptions.resolvedStatus + "+by+" + preprocessReporter(reporterName);
 
     //TODO: Analyse if its necesessary using max results here.
     var changedPrioritiesUrl = searchService + "jql=" + priorityChangesJql + "&maxResults=" + extentionOptions.maxResults + "&expand=changelog";
@@ -274,20 +296,27 @@ function getReportersReputation(reporterName) {
     var changedPrioritiesXhr = new XMLHttpRequest();
     changedPrioritiesXhr.onreadystatechange = function () {
 
-        if (changedPrioritiesXhr.readyState === 4 && changedPrioritiesXhr.status === 200) {
-            var potentialInflatedIssues = JSON.parse(changedPrioritiesXhr.responseText);
+        if (changedPrioritiesXhr.readyState === 4) {
 
-            updateReportersReputation(reporterName, potentialInflatedIssues);
-            reporterRequestCounter -= 1;
-            if (reporterRequestCounter === 0) {
-                reputationScoresReady();
+            if (changedPrioritiesXhr.status === 200) {
+                var potentialInflatedIssues = JSON.parse(changedPrioritiesXhr.responseText);
+
+                updateReportersReputation(reporterName, potentialInflatedIssues);
+                reporterRequestCounter -= 1;
+                if (reporterRequestCounter === 0) {
+                    reputationScoresReady();
+                }
+            } else {
+                showErrorMessage(changedPrioritiesUrl);
             }
+
         }
     };
 
     changedPrioritiesXhr.open("GET", changedPrioritiesUrl, true);
     changedPrioritiesXhr.send();
 }
+
 
 function queryIssuesFromServer() {
     "use strict";
@@ -302,15 +331,20 @@ function queryIssuesFromServer() {
     tableHeader.textContent = "Loading issues from " + extentionOptions.host;
 
     openIssuesXhr.onreadystatechange = function () {
-        if (openIssuesXhr.readyState === 4 && openIssuesXhr.status === 200) {
-            unassignedIssues = JSON.parse(openIssuesXhr.responseText).issues;
-            console.log("unassignedIssues", unassignedIssues);
+        if (openIssuesXhr.readyState === 4) {
 
-            startDefaultReputationMap();
+            if (openIssuesXhr.status === 200) {
+                unassignedIssues = JSON.parse(openIssuesXhr.responseText).issues;
+                console.log("unassignedIssues", unassignedIssues);
 
-            console.log("Default reputationScore", reputationScore);
-            reporterRequestCounter = Object.keys(reputationScore).length;
-            Object.keys(reputationScore).forEach(getReportersReputation);
+                startDefaultReputationMap();
+
+                console.log("Default reputationScore", reputationScore);
+                reporterRequestCounter = Object.keys(reputationScore).length;
+                Object.keys(reputationScore).forEach(getReportersReputation);
+            } else {
+                showErrorMessage(openIssuesUrl);
+            }
         }
 
     };
@@ -319,6 +353,22 @@ function queryIssuesFromServer() {
 
     console.log("Getting open issues using: " + searchService + openIssuesQueryString);
     openIssuesXhr.send();
+}
+
+function startIssueLoading() {
+    "use strict";
+
+    var status = document.getElementById(statusId);
+    status.textContent = "";
+    status.classList.remove("info", "success", "warning", "error");
+
+    chrome.permissions.request({
+        origins: [extentionOptions.host]
+    }, function (granted) {
+        if (granted) {
+            queryIssuesFromServer();
+        }
+    });
 }
 
 console.log("Loading popup script ...");
@@ -333,15 +383,7 @@ document.addEventListener("DOMContentLoaded", function () {
         extentionOptions = storedParameters;
         console.log("extentionOptions", extentionOptions);
 
-        loadLink.addEventListener("click", function () {
-            chrome.permissions.request({
-                origins: [extentionOptions.host]
-            }, function (granted) {
-                if (granted) {
-                    queryIssuesFromServer();
-                }
-            });
-        });
+        loadLink.addEventListener("click", startIssueLoading);
     });
 
 
