@@ -20,7 +20,7 @@ var defaultOptions = {
     maxResults: "20",
     optimalThreshold: 0.7,
     host: "http://myjiraserver",
-    projectJql: "project=MYPROJECT+and+status=Open+and+assignee+is+null+order+by+priority+desc,created+desc"
+    project: "MYPROJECT"
 };
 
 //TODO: Also, instructions are pending.
@@ -29,6 +29,7 @@ var defaultOptions = {
 //if it not the case
 //TODO: We need to figure out how necessary is this maxResults parameter
 
+var inboxJql = "+and+status=Open+and+assignee+is+null+order+by+priority+desc,created+desc";
 var jiraRestApi = "/rest/api/2/search?";
 var unassignedIssues = null;
 var reputationScore = {};
@@ -238,8 +239,6 @@ function isInflatedIssue(issue) {
         originalPriority = getOriginalPriority(changeLogHistories);
     }
 
-    console.log("issue", issue, "resolver", resolver, "resolverPriority", resolverPriority, "originalPriority", originalPriority);
-
     if (resolverPriority && (resolverPriority !== originalPriority)) {
         isInflated = true;
     }
@@ -263,7 +262,6 @@ function updateReportersReputation(reporterName, potentialInflatedIssues) {
         });
 
         reputationScore[reporterName] = Math.max(0.0, maximumReputation - inflatedIssues * extentionOptions.inflationPenalty);
-        console.log("reporterName", reporterName, "inflatedIssues", inflatedIssues, "reputationScore[reporterName]", reputationScore[reporterName]);
 
     }
 }
@@ -287,11 +285,13 @@ function getReportersReputation(reporterName) {
 
     var searchService = extentionOptions.host + jiraRestApi;
 
-    var priorityChangesJql = "reporter=" + preprocessReporter(reporterName) + "+and+priority+changed+and+status+was+" + extentionOptions.resolvedStatus;
+    var priorityChangesJql = "reporter=" + preprocessReporter(reporterName) + "+and+priority+changed+and+status+was+";
+    priorityChangesJql += extentionOptions.resolvedStatus;
     priorityChangesJql += "+and+status+was+not+" + extentionOptions.resolvedStatus + "+by+" + preprocessReporter(reporterName);
 
     //TODO: Analyse if its necesessary using max results here.
-    var changedPrioritiesUrl = searchService + "jql=" + priorityChangesJql + "&maxResults=" + extentionOptions.maxResults + "&expand=changelog";
+    var changedPrioritiesUrl = searchService + "jql=" + priorityChangesJql + "&maxResults=" + extentionOptions.maxResults;
+    changedPrioritiesUrl += "&expand=changelog";
 
     var changedPrioritiesXhr = new XMLHttpRequest();
     changedPrioritiesXhr.onreadystatechange = function () {
@@ -324,7 +324,9 @@ function queryIssuesFromServer() {
     var openIssuesXhr = new XMLHttpRequest();
 
     var searchService = extentionOptions.host + jiraRestApi;
-    var openIssuesQueryString = "jql=" + extentionOptions.projectJql + "&maxResults=" + extentionOptions.maxResults;
+    var openIssuesQueryString = "jql=project=" + extentionOptions.project + inboxJql + "&maxResults=";
+    openIssuesQueryString += extentionOptions.maxResults;
+
     var openIssuesUrl = searchService + openIssuesQueryString;
     var tableHeader = document.getElementById(tableHeaderId);
 

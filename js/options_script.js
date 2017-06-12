@@ -5,13 +5,14 @@
 var saveButtonId = "save";
 var statusId = "status";
 
+//TODO: This object is replicated in two files
 var defaultOptions = {
     inflationPenalty: 0.1,
     resolvedStatus: "Resolved",
     maxResults: "20",
     optimalThreshold: 0.7,
     host: "http://myjiraserver",
-    projectJql: "project=MYPROJECT+and+status=Open+and+assignee+is+null+order+by+created+desc,priority+desc"
+    project: "MYPROJECT"
 };
 
 // var chrome = null;
