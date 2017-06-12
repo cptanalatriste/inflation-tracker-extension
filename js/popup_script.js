@@ -269,11 +269,11 @@ function updateReportersReputation(reporterName, potentialInflatedIssues) {
 }
 
 
-function showErrorMessage(request) {
+function showErrorMessage(textContent) {
     "use strict";
 
     var status = document.getElementById(statusId);
-    status.textContent = "Error while connecting to: " + request;
+    status.textContent = textContent;
     status.classList.add("error");
 }
 
@@ -307,7 +307,7 @@ function getReportersReputation(reporterName) {
                     reputationScoresReady();
                 }
             } else {
-                showErrorMessage(changedPrioritiesUrl);
+                showErrorMessage("Error while connecting to: " + changedPrioritiesUrl);
             }
 
         }
@@ -343,7 +343,7 @@ function queryIssuesFromServer() {
                 reporterRequestCounter = Object.keys(reputationScore).length;
                 Object.keys(reputationScore).forEach(getReportersReputation);
             } else {
-                showErrorMessage(openIssuesUrl);
+                showErrorMessage("Error while connecting to: " + openIssuesUrl);
             }
         }
 
@@ -366,7 +366,12 @@ function startIssueLoading() {
         origins: [extentionOptions.host]
     }, function (granted) {
         if (granted) {
-            queryIssuesFromServer();
+
+            if (JSON.stringify(defaultOptions) !== JSON.stringify(extentionOptions)) {
+                queryIssuesFromServer();
+            } else {
+                showErrorMessage("Please configure the extension options before connecting to the server.");
+            }
         }
     });
 }
@@ -382,7 +387,6 @@ document.addEventListener("DOMContentLoaded", function () {
     chrome.storage.sync.get(defaultOptions, function (storedParameters) {
         extentionOptions = storedParameters;
         console.log("extentionOptions", extentionOptions);
-
         loadLink.addEventListener("click", startIssueLoading);
     });
 
