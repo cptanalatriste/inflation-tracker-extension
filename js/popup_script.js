@@ -33,8 +33,8 @@ var jiraRestApi = "/rest/api/2/search?";
 var unassignedIssues = null;
 var reputationScore = {};
 var reporterRequestCounter = 0;
-var maximumSummarySize = 50;
-var maximumKeySize = 11;
+var maximumSummarySize = 60;
+var maximumKeySize = 15;
 var maximumReputation = 1.0;
 var extentionOptions = defaultOptions;
 
@@ -75,9 +75,9 @@ function addIssuesToHTMLTable(unassigedIssueList) {
     unassigedIssueList.forEach(function (issueInformation) {
         var issueRow = document.createElement("tr");
         var rowContent = "<td>" + issueInformation.trimmedkey + "</td><td>" + issueInformation.summary + "</td>";
-        rowContent += "<td><i class='material-icons button' title='" + issueInformation.reporter + " reputation is";
-        rowContent += " " + issueInformation.reporterScore + "'>" + issueInformation.scoreIcon;
-        rowContent += "</i><i class='material-icons button' id='" + issueInformation.key + "' title='Open issue ";
+        rowContent += "<td>" + "<i title='" + issueInformation.reporter + " reputation is";
+        rowContent += " " + issueInformation.reporterScore + "'>" + issueInformation.reporterScore;
+        rowContent += "</i></td><td><i class='material-icons button' id='" + issueInformation.key + "' title='Open issue ";
         rowContent += issueInformation.key + "'>pageview</i></td>";
 
         issueRow.innerHTML = rowContent;
