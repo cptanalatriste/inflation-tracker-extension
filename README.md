@@ -11,7 +11,12 @@ After installing the extension, the inflation tracker button will be available i
 
 Inmediatly after installing the extension you should configure the options according to the characteristics of your bug reporting process. Here's a brief descriptions of the options available:
 
-* JIRA Host: The URL of your JIRA system. For example, tha Apache Software Foundation uses https://issues.apache.org/jira .
+* JIRA host: The URL of your JIRA system. For example, tha Apache Software Foundation uses https://issues.apache.org/jira .
+* Inflation penalty: The extensions works based on the concept of "Reporter Reputation". If the priority assigned by a bug reporter is changed later during the patch development process, his reputation score is diminished. This parameter defines the penalty per infraction.
+* Maximum results per request: Under the hood, the extension makes heavy usage of JIRA's REST API: This parameter defines the maximum number of issues returned per request.
+* Minimum acceptable reputation: Each reporter gets a "thumbs up" or "thumbs down" label based on their reputation score. This parameter defines the minimum reputation score for a "thumbs up" label.
+* Project: The name of the project you're working on.
+* When you finish working on an issue, you update the status to: We use this information to identify the "important" priority corrections that impact the score. For example, if this parameters is set to "Resolved" —the default— any priority correction made by a "Resolver" will impact the reporter's reputation.
 
 
 
