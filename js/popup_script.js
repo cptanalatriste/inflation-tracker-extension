@@ -17,6 +17,7 @@ var loadLinkId = "connect";
 var optionsLinkId = "options";
 var statusId = "status";
 var controlsId = "controls";
+var viewReportersLinkId = "viewReportersLink";
 
 
 //TODO: Temporary values for testing.
@@ -73,6 +74,21 @@ function openIssueInTab(mouseEvent) {
 
 }
 
+function configureTableHeader(tableHeaderText, idHeaderText, summaryHeaderText, scoreHeaderText, actionHeaderText) {
+    "use strict";
+    var tableHeader = document.getElementById(tableHeaderId);
+    var idHeader = document.getElementById(idHeaderId);
+    var summaryHeader = document.getElementById(summaryHeaderId);
+    var scoreHeader = document.getElementById(scoreHeaderId);
+    var actionHeader = document.getElementById(actionHeaderId);
+
+    tableHeader.textContent = tableHeaderText;
+    idHeader.textContent = idHeaderText;
+    summaryHeader.textContent = summaryHeaderText;
+    scoreHeader.textContent = scoreHeaderText;
+    actionHeader.textContent = actionHeaderText;
+}
+
 function addIssuesToHTMLTable(unassigedIssueList) {
     "use strict";
 
@@ -94,7 +110,8 @@ function addIssuesToHTMLTable(unassigedIssueList) {
     var previousTableBody = document.getElementsByTagName("tbody")[0];
     previousTableBody.parentNode.replaceChild(issueTable, previousTableBody);
 
-    tableHeader.textContent = unassigedIssueList.length + " issues retrieved from " + extentionOptions.host;
+    var tableHeaderText = unassigedIssueList.length + " issues retrieved from " + extentionOptions.host;
+    configureTableHeader(tableHeaderText, "Key", "Summary", "Score", "View");
 
     var inboxControls = document.getElementsByTagName("i");
     Array.from(inboxControls).forEach(function (control) {
@@ -134,30 +151,21 @@ function compareReputation(issue, otherIssue) {
     return 0;
 }
 
+
 function enableReportersReport() {
     "use strict";
 
     var extensionControls = document.getElementById(controlsId);
     var viewReportersLink = document.createElement("a");
     viewReportersLink.appendChild(document.createTextNode("Reputation Report"));
+    viewReportersLink.id = viewReportersLinkId;
     viewReportersLink.href = "#";
     viewReportersLink.classList.add("btn");
 
     viewReportersLink.addEventListener("click", function () {
         console.log("Showing reporters report");
 
-        var tableHeader = document.getElementById(tableHeaderId);
-        var idHeader = document.getElementById(idHeaderId);
-        var summaryHeader = document.getElementById(summaryHeaderId);
-        var scoreHeader = document.getElementById(scoreHeaderId);
-        var actionHeader = document.getElementById(actionHeaderId);
-
-        tableHeader.textContent = "Reporter Report";
-        idHeader.textContent = "#";
-        summaryHeader.textContent = "Name";
-        scoreHeader.textContent = "Score";
-        actionHeader.textContent = "OK?";
-
+        configureTableHeader("Reporter's Report", "#", "Name", "Score", "OK?");
         var reporterInformation = [];
         Object.keys(reputationScore).forEach(function (reporterName) {
             reporterInformation.push(getReporterInfo(reporterName));
@@ -402,8 +410,12 @@ function queryIssuesFromServer() {
 
     var openIssuesUrl = searchService + openIssuesQueryString;
     var tableHeader = document.getElementById(tableHeaderId);
-
     tableHeader.textContent = "Loading issues from " + extentionOptions.host;
+
+    var viewReportersLink = document.getElementById(viewReportersLinkId);
+    if (viewReportersLink !== null) {
+        viewReportersLink.parentNode.removeChild(viewReportersLink);
+    }
 
     openIssuesXhr.onreadystatechange = function () {
         if (openIssuesXhr.readyState === 4) {
