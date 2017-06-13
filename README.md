@@ -2,7 +2,7 @@
 Some reporters inflate priority to get their issues fixed. When they do that, you as a developer can spend time on issues that are less important than other open issues. This Chrome Extension helps you identify reporters who do this.
 
 ## Installation
-The Chrome Extension is still under development. To install it, download the code from this repository and load it as an unpacked extension [following this procedure.](https://developer.chrome.com/extensions/getstarted#unpacked). 
+The Chrome Extension is still under development. To install it, download the code from this repository and load it as an unpacked extension [following this procedure](https://developer.chrome.com/extensions/getstarted#unpacked). 
 
 ## Features
 After installing the extension, the inflation tracker button will be available in your browser. After clicking it you will see the following:
@@ -28,7 +28,7 @@ Per issue, you can see the reputation score of the reporter in the "Score" colum
 
 
 ## Inflation Tracker as a JIRA Plugin
-We also developed an inflation tracker implemented as a JIRA Plugin: as such, it requires JIRA administration rights to install it. It is also under development, but if you're interested [you can check it here.](https://github.com/cptanalatriste/inflation-tracker).
+We also developed an inflation tracker implemented as a JIRA Plugin: as such, it requires JIRA administration rights to install it. It is also under development, but if you're interested [you can check it here](https://github.com/cptanalatriste/inflation-tracker).
 
 
 ## Questions, issues or support?
