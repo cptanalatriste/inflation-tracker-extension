@@ -22,6 +22,10 @@ Once you have set proper values for all this parameters, you can click on the "L
 
 ![alt text](https://github.com/cptanalatriste/inflation-tracker-extension/blob/master/img/screenshots/issues.PNG?raw=true "Issues Loaded")
 
+Per issue, you can see the reputation score of the reporter in the "Score" column. Also, we provide a "View" button —the magnifier glass— which can open the issue on the current active tab. After the issues have loaded the "Reputation Report" button is activated, which shows the list of reporters for the issues in the inbox sorted by reputation, including their "thumbs up" status:
+
+![alt text](https://github.com/cptanalatriste/inflation-tracker-extension/blob/master/img/screenshots/reporters.PNG?raw=true "Reputation Report")
+
 
 ## Inflation Tracker as a JIRA Plugin
 We also developed an inflation tracker implemented as a JIRA Plugin: as such, it requires JIRA administration rights to install it. It is also under development, but if you're interested [you can check it here](https://github.com/cptanalatriste/inflation-tracker).
