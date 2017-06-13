@@ -9,5 +9,9 @@ After installing the extension, the inflation tracker button will be available i
 
 ![alt text](https://github.com/cptanalatriste/inflation-tracker-extension/blob/master/img/screenshots/start.PNG?raw=true "Extension start")
 
+Inmediatly after installing the extension you should configure the options according to the characteristics of your bug reporting process. Here's a brief descriptions of the options available:
+
+* JIRA Host: The URL of your JIRA system. For example, tha Apache Software Foundation uses https://issues.apache.org/jira .
+
 
 
