@@ -43,6 +43,7 @@ var reputationScore = {};
 var reporterRequestCounter = 0;
 var maximumSummarySize = 60;
 var maximumKeySize = 15;
+
 var maximumReputation = 1.0;
 var extentionOptions = defaultOptions;
 
