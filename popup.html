@@ -5,31 +5,37 @@
     <title>InflationTracker</title>
     <link rel="stylesheet" href="css/flat_table.css">
     <link rel="stylesheet" href="css/message_boxes.css">
+    <link rel="stylesheet" href="css/buttons.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="js/popup_script.js"></script>
 </head>
 <body>
+<h1>JIRA Inflation Tracker</h1>
+<p>Before using the extension, make sure you have access to your JIRA instance and have configured the
+    extension options properly.
+</p>
 
-<table id="tableContainer" class="mask">
-    <h1>JIRA Inflation Tracker</h1>
-    <p>Before using the extension, make sure you have access to your JIRA instance and have configured the
-        <a id="options" href="#">extension options</a> properly. <a id="connect" href="#">Click here to load inbox</a>
-    </p>
+<div id="controls" style="padding:1em; text-align:center">
+    <a id="options" class="btn" href="#">Extension Options</a>
+    <a id="connect" class="btn" href="#">Load Issues</a>
+</div>
 
+<table id="tableContainer">
     <thead>
     <tr>
         <th id="tableHeader" colspan="4">Inbox</th>
     </tr>
     <tr>
-        <th>Key</th>
-        <th>Summary</th>
-        <th>Score</th>
-        <th>View</th>
+        <th id="idHeader">Key</th>
+        <th id="summaryHeader">Summary</th>
+        <th id="scoreHeader">Score</th>
+        <th id="actionHeader">View</th>
     </tr>
     </thead>
-    <tbody id="issuesTable">
+    <tbody id="containerTable">
     </tbody>
 </table>
+
 <div id="status" ></div>
 </body>
 </html>

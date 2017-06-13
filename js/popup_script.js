@@ -4,13 +4,19 @@
  * Popup style taken from: https://codepen.io/ldesanto/full/pEftw/
  * Icons provided here: http://materializecss.com/icons.html
  * And here: https://www.iconfinder.com/icons/1688867/business_management_person_reputation_icon#size=128
- * And also here: http://itweek.deviantart.com/art/Knob-Buttons-Toolbar-icons-73463960*/
+ * And also here: http://itweek.deviantart.com/art/Knob-Buttons-Toolbar-icons-73463960
+ * Button styles from: http://cssmenumaker.com/br/blog/css-button-set-tutorial*/
 
-var issueTableId = "issuesTable";
 var tableHeaderId = "tableHeader";
+var idHeaderId = "idHeader";
+var summaryHeaderId = "summaryHeader";
+var scoreHeaderId = "scoreHeader";
+var actionHeaderId = "actionHeader";
+
 var loadLinkId = "connect";
 var optionsLinkId = "options";
 var statusId = "status";
+var controlsId = "controls";
 
 
 //TODO: Temporary values for testing.
@@ -70,7 +76,7 @@ function openIssueInTab(mouseEvent) {
 function addIssuesToHTMLTable(unassigedIssueList) {
     "use strict";
 
-    var issueTable = document.getElementById(issueTableId);
+    var issueTable = document.createElement("tbody");
     var tableHeader = document.getElementById(tableHeaderId);
 
     unassigedIssueList.forEach(function (issueInformation) {
@@ -85,16 +91,98 @@ function addIssuesToHTMLTable(unassigedIssueList) {
         issueTable.appendChild(issueRow);
     });
 
+    var previousTableBody = document.getElementsByTagName("tbody")[0];
+    previousTableBody.parentNode.replaceChild(issueTable, previousTableBody);
+
     tableHeader.textContent = unassigedIssueList.length + " issues retrieved from " + extentionOptions.host;
 
     var inboxControls = document.getElementsByTagName("i");
-
     Array.from(inboxControls).forEach(function (control) {
         control.addEventListener("click", openIssueInTab);
     });
 
     console.log("Issues loaded!");
 
+}
+
+
+function getReporterInfo(reporterName) {
+    "use strict";
+    var reporterScore = reputationScore[reporterName];
+    var scoreAsPercentage = reporterScore * 100;
+    var reputationIcon = reporterScore >= extentionOptions.optimalThreshold
+        ? "thumb_up"
+        : "thumb_down";
+
+    return {
+        reporter: reporterName,
+        rawScore: reporterScore,
+        reporterScore: scoreAsPercentage.toFixed(2) + "%",
+        scoreIcon: reputationIcon
+    };
+}
+
+function compareReputation(issue, otherIssue) {
+    "use strict";
+    if (issue.rawScore > otherIssue.rawScore) {
+        return -1;
+    }
+
+    if (issue.rawScore < otherIssue.rawScore) {
+        return 1;
+    }
+    return 0;
+}
+
+function enableReportersReport() {
+    "use strict";
+
+    var extensionControls = document.getElementById(controlsId);
+    var viewReportersLink = document.createElement("a");
+    viewReportersLink.appendChild(document.createTextNode("Reputation Report"));
+    viewReportersLink.href = "#";
+    viewReportersLink.classList.add("btn");
+
+    viewReportersLink.addEventListener("click", function () {
+        console.log("Showing reporters report");
+
+        var tableHeader = document.getElementById(tableHeaderId);
+        var idHeader = document.getElementById(idHeaderId);
+        var summaryHeader = document.getElementById(summaryHeaderId);
+        var scoreHeader = document.getElementById(scoreHeaderId);
+        var actionHeader = document.getElementById(actionHeaderId);
+
+        tableHeader.textContent = "Reporter Report";
+        idHeader.textContent = "#";
+        summaryHeader.textContent = "Name";
+        scoreHeader.textContent = "Score";
+        actionHeader.textContent = "OK?";
+
+        var reporterInformation = [];
+        Object.keys(reputationScore).forEach(function (reporterName) {
+            reporterInformation.push(getReporterInfo(reporterName));
+        });
+
+        reporterInformation.sort(compareReputation);
+        console.log("reporterInformation", reporterInformation);
+
+        var reporterTable = document.createElement("tbody");
+        reporterInformation.forEach(function (reporterInfo, index) {
+            var reporterRow = document.createElement("tr");
+            var rowContent = "<td>" + (index + 1) + "</td><td>" + reporterInfo.reporter + "</td>";
+            rowContent += "<td><i>" + reporterInfo.reporterScore + "</i>";
+            rowContent += "</i></td><td style='text-align: center'><i class='material-icons button'>";
+            rowContent += reporterInfo.scoreIcon + "</i></td>";
+
+            reporterRow.innerHTML = rowContent;
+            reporterTable.appendChild(reporterRow);
+        });
+
+        var previousTableBody = document.getElementsByTagName("tbody")[0];
+        previousTableBody.parentNode.replaceChild(reporterTable, previousTableBody);
+    });
+
+    extensionControls.appendChild(viewReportersLink);
 }
 
 function trimString(originalString, maxLength) {
@@ -110,13 +198,7 @@ function reputationScoresReady() {
 
     var unassigedIssueList = [];
     unassignedIssues.forEach(function (issue) {
-        var reporterScore = reputationScore[issue.fields.reporter.name];
-        var reputationIcon = reporterScore >= extentionOptions.optimalThreshold
-            ? "thumb_up"
-            : "thumb_down";
-
-        var scoreAsPercentage = reporterScore * 100;
-
+        var reporterInformation = getReporterInfo(issue.fields.reporter.name);
         var priorityId = null;
         var priorityName = null;
 
@@ -131,29 +213,20 @@ function reputationScoresReady() {
             trimmedkey: trimString(issue.key, maximumKeySize),
             key: issue.key,
             summary: trimmedSummary,
-            reporter: issue.fields.reporter.name,
-            rawScore: reporterScore,
-            reporterScore: scoreAsPercentage.toFixed(2) + "%",
+            reporter: reporterInformation.reporter,
+            rawScore: reporterInformation.rawScore,
+            reporterScore: reporterInformation.reporterScore,
             priorityId: priorityId, //TODO: Not sure if this ID is sorted in the hierarchy
             priorityName: priorityName,
-            scoreIcon: reputationIcon
+            scoreIcon: reporterInformation.scoreIcon
         });
     });
 
-    unassigedIssueList.sort(function (issue, otherIssue) {
-        if (issue.rawScore > otherIssue.rawScore) {
-            return -1;
-        }
-
-        if (issue.rawScore < otherIssue.rawScore) {
-            return 1;
-        }
-
-        return 0;
-    });
+    unassigedIssueList.sort(compareReputation);
 
     console.log("unassigedIssueList", unassigedIssueList);
     addIssuesToHTMLTable(unassigedIssueList);
+    enableReportersReport();
 }
 
 function getResolver(changeLogHistories) {
