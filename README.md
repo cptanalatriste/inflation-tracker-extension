@@ -18,6 +18,11 @@ Inmediatly after installing the extension you should configure the options accor
 * Project: The name of the project you're working on.
 * When you finish working on an issue, you update the status to: We use this information to identify the "important" priority corrections that impact the score. For example, if this parameters is set to "Resolved" —the default— any priority correction made by a "Resolver" will impact the reporter's reputation.
 
+Once you have set proper values for all this parameters, you can click on the "Load Issues" button to obtain a list of *open an unassigned issues sorted by reporter reputation, reported priority and creation date* :
+
+![alt text](https://github.com/cptanalatriste/inflation-tracker-extension/blob/master/img/screenshots/issues.PNG?raw=true "Issues Loaded")
+
+
 ## Inflation Tracker as a JIRA Plugin
 We also developed an inflation tracker implemented as a JIRA Plugin: as such, it requires JIRA administration rights to install it. It is also under development, but if you're interested [you can check it here](https://github.com/cptanalatriste/inflation-tracker).
 
