@@ -20,17 +20,15 @@ var controlsId = "controls";
 var viewReportersLinkId = "viewReportersLink";
 
 
-//TODO: Temporary values for testing.
 var defaultOptions = {
+    host: "http://myjiraserver.co.uk",
     inflationPenalty: 0.1,
-    resolvedStatus: "Resolved",
     maxResults: "20",
     optimalThreshold: 0.7,
-    host: "http://myjiraserver",
-    project: "MYPROJECT"
+    project: "MYPROJECT",
+    resolvedStatus: "Resolved"
 };
 
-//TODO: Also, instructions are pending.
 //TODO: Include the parameter "fields" in the request
 //TODO: This requires that the user is already logged in the target JIRA system. We need an approapriate error message
 //if it not the case
@@ -60,7 +58,6 @@ function startDefaultReputationMap() {
 
 function openIssueInTab(mouseEvent) {
     "use strict";
-    console.log("mouseEvent", mouseEvent);
 
     var source = mouseEvent.target || mouseEvent.srcElement;
     if (source.textContent === "pageview") {
@@ -119,8 +116,6 @@ function addIssuesToHTMLTable(unassigedIssueList) {
         control.addEventListener("click", openIssueInTab);
     });
 
-    console.log("Issues loaded!");
-
 }
 
 
@@ -164,7 +159,6 @@ function enableReportersReport() {
     viewReportersLink.classList.add("btn");
 
     viewReportersLink.addEventListener("click", function () {
-        console.log("Showing reporters report");
 
         configureTableHeader("Reporter's Report", "#", "Name", "Score", "OK?");
         var reporterInformation = [];
@@ -173,7 +167,6 @@ function enableReportersReport() {
         });
 
         reporterInformation.sort(compareReputation);
-        console.log("reporterInformation", reporterInformation);
 
         var reporterTable = document.createElement("tbody");
         reporterInformation.forEach(function (reporterInfo, index) {
@@ -203,7 +196,6 @@ function trimString(originalString, maxLength) {
 
 function reputationScoresReady() {
     "use strict";
-    console.log("READY: reputationScore", reputationScore);
 
     var unassigedIssueList = [];
     unassignedIssues.forEach(function (issue) {
@@ -233,7 +225,6 @@ function reputationScoresReady() {
 
     unassigedIssueList.sort(compareReputation);
 
-    console.log("unassigedIssueList", unassigedIssueList);
     addIssuesToHTMLTable(unassigedIssueList);
     enableReportersReport();
 }
@@ -332,10 +323,6 @@ function isInflatedIssue(issue) {
 function updateReportersReputation(reporterName, potentialInflatedIssues) {
     "use strict";
     if (potentialInflatedIssues.issues.length > 0) {
-        console.log("reporterName", reporterName, "potentialInflatedIssues", potentialInflatedIssues);
-
-        // TODO: This is an over-aproximation. We need to refine that the resolver is not the reporter and that the
-        // priority changer is the resolver.
         var inflatedIssues = 0;
         potentialInflatedIssues.issues.forEach(function (issue) {
             if (isInflatedIssue(issue)) {
@@ -359,7 +346,7 @@ function showErrorMessage(textContent) {
 
 function preprocessReporter(reporterName) {
     "use strict";
-    return reporterName.replace(/@/g, "\\u0040");
+    return "'" + reporterName.replace(/@/g, "\\u0040") + "'";
 }
 
 function getReportersReputation(reporterName) {
@@ -423,11 +410,9 @@ function queryIssuesFromServer() {
 
             if (openIssuesXhr.status === 200) {
                 unassignedIssues = JSON.parse(openIssuesXhr.responseText).issues;
-                console.log("unassignedIssues", unassignedIssues);
 
                 startDefaultReputationMap();
 
-                console.log("Default reputationScore", reputationScore);
                 reporterRequestCounter = Object.keys(reputationScore).length;
                 Object.keys(reputationScore).forEach(getReportersReputation);
             } else {
@@ -439,7 +424,6 @@ function queryIssuesFromServer() {
 
     openIssuesXhr.open("GET", openIssuesUrl, true);
 
-    console.log("Getting open issues using: " + searchService + openIssuesQueryString);
     openIssuesXhr.send();
 }
 
@@ -450,21 +434,21 @@ function startIssueLoading() {
     status.textContent = "";
     status.classList.remove("info", "success", "warning", "error");
 
-    chrome.permissions.request({
-        origins: [extentionOptions.host]
-    }, function (granted) {
-        if (granted) {
-
-            if (JSON.stringify(defaultOptions) !== JSON.stringify(extentionOptions)) {
+    if (JSON.stringify(defaultOptions) !== JSON.stringify(extentionOptions)) {
+        chrome.permissions.request({
+            origins: [extentionOptions.host]
+        }, function (granted) {
+            if (granted) {
                 queryIssuesFromServer();
-            } else {
-                showErrorMessage("Please configure the extension options before connecting to the server.");
             }
-        }
-    });
+        });
+    } else {
+        showErrorMessage("Please configure the extension options before connecting to the server.");
+    }
+
+
 }
 
-console.log("Loading popup script ...");
 document.addEventListener("DOMContentLoaded", function () {
     "use strict";
 
@@ -474,7 +458,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     chrome.storage.sync.get(defaultOptions, function (storedParameters) {
         extentionOptions = storedParameters;
-        console.log("extentionOptions", extentionOptions);
         loadLink.addEventListener("click", startIssueLoading);
     });
 
