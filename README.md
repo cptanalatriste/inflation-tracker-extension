@@ -26,10 +26,8 @@ Per issue, you can see the reputation score of the reporter in the "Score" colum
 
 ![alt text](https://github.com/cptanalatriste/inflation-tracker-extension/blob/master/img/screenshots/reporters.PNG?raw=true "Reputation Report")
 
-
-## Inflation Tracker as a JIRA Plugin
-We also developed an inflation tracker implemented as a JIRA Plugin: as such, it requires JIRA administration rights to install it. It is also under development, but if you're interested [you can check it here](https://github.com/cptanalatriste/inflation-tracker).
-
+## The Priority Inflation Game
+This tool is the outcome of a research project on game-theoretic analysis of software processes. If you want to get into details, feel free to visit [our project page](http://ttendency.cs.ucl.ac.uk/projects/priority_inflation/index.html).
 
 ## Questions, issues or support?
 Feel free to contact me at c.gavidia@cs.ucl.ac.uk .
