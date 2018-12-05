@@ -1,10 +1,10 @@
 {
   "manifest_version": 2,
-  "name": "JIRA Inflation Tracker",
+  "name": "TheFed",
   "description": "Facilitates bug resolvers to keep track on priority inflation on JIRA issues",
   "version": "1.0",
   "browser_action": {
-    "default_title": "InflationTracker",
+    "default_title": "TheFed",
     "default_icon": "img/icon.png",
     "default_popup": "popup.html"
   },
