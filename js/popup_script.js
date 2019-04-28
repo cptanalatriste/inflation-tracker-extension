@@ -35,7 +35,7 @@ var defaultOptions = {
 //TODO: We need to figure out how necessary is this maxResults parameter
 
 var inboxJql = "+and+status=Open+and+assignee+is+null+order+by+priority+desc,created+desc";
-var jiraRestApi = "/rest/api/2/search?";
+var jiraRestApi = "rest/api/2/search?";
 var unassignedIssues = null;
 var reputationScore = {};
 var reporterRequestCounter = 0;
@@ -233,7 +233,7 @@ function getResolver(changeLogHistories) {
     "use strict";
     var resolver = null;
     changeLogHistories.some(function (history) {
-        var changer = history.author.name;
+        var changer = history.author? history.author.name : null;
 
         history.items.some(function (changeItem) {
 
@@ -257,7 +257,7 @@ function getResolverPriority(changeLogHistories, resolver) {
 
     changeLogHistories.some(function (history) {
 
-        if (history.author.name === resolver) {
+        if (history.author && history.author.name === resolver) {
             history.items.some(function (changeItem) {
                 if (changeItem.field === "priority") {
                     resolverPriority = changeItem.toString;
@@ -349,10 +349,21 @@ function preprocessReporter(reporterName) {
     return "'" + reporterName.replace(/@/g, "\\u0040") + "'";
 }
 
+function getSearchService() {
+  var searchService = extentionOptions.host;
+  var lastCharacter = searchService[searchService.length - 1];
+
+  if (lastCharacter !== '/') {
+    searchService += "/";
+  }
+
+  return searchService + jiraRestApi;
+}
+
 function getReportersReputation(reporterName) {
     "use strict";
 
-    var searchService = extentionOptions.host + jiraRestApi;
+    var searchService = getSearchService();
 
     var priorityChangesJql = "reporter=" + preprocessReporter(reporterName) + "+and+priority+changed+and+status+was+";
     priorityChangesJql += extentionOptions.resolvedStatus;
@@ -392,7 +403,7 @@ function queryIssuesFromServer() {
 
     var openIssuesXhr = new XMLHttpRequest();
 
-    var searchService = extentionOptions.host + jiraRestApi;
+    var searchService = getSearchService();
     var openIssuesQueryString = "jql=project=" + extentionOptions.project + inboxJql + "&maxResults=";
     openIssuesQueryString += extentionOptions.maxResults;
 
@@ -415,6 +426,9 @@ function queryIssuesFromServer() {
 
                 reporterRequestCounter = Object.keys(reputationScore).length;
                 Object.keys(reputationScore).forEach(getReportersReputation);
+            } else if (openIssuesXhr.status === 401) {
+              showErrorMessage("You need to be logged in JIRA first"
+                + " before using TheFed.");
             } else {
                 showErrorMessage("Error while connecting to: " + openIssuesUrl);
             }
@@ -423,8 +437,17 @@ function queryIssuesFromServer() {
     };
 
     openIssuesXhr.open("GET", openIssuesUrl, true);
-
     openIssuesXhr.send();
+}
+
+function afterPermissionRequest(granted) {
+    if(chrome.runtime.lastError) {
+      showErrorMessage("Unexpected error while requesting permissions to host " +
+          extentionOptions.host)
+      console.warn(chrome.runtime.lastError.message);
+    } else if (granted){
+          queryIssuesFromServer();
+    }
 }
 
 function startIssueLoading() {
@@ -436,18 +459,7 @@ function startIssueLoading() {
     if (JSON.stringify(defaultOptions) !== JSON.stringify(extentionOptions)) {
         chrome.permissions.request({
             origins: [extentionOptions.host]
-        }, function (granted) {
-            if(chrome.runtime.lastError) {
-              showErrorMessage("Unexpected error while requesting permissions to host " +
-                  extentionOptions.host)
-              console.warn(chrome.runtime.lastError.message);
-            } else {
-              if (granted) {
-                  queryIssuesFromServer();
-              }
-            }
-        });
-
+        }, afterPermissionRequest);
 
     } else {
         showErrorMessage("Please configure the extension options before connecting" +
