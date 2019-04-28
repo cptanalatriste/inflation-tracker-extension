@@ -2,7 +2,7 @@
 Some reporters inflate priority to get their issues fixed. When they do that, you as a developer can spend time on issues that are less important than other open issues. This Chrome Extension helps you identify reporters who do this.
 
 ## Installation
-The Chrome Extension is still under development. To install it, [download the extension code](https://github.com/cptanalatriste/inflation-tracker-extension/releases/download/v0.1-alpha/jira-inflation-tracker.zip), unzip it and load it as an unpacked extension [following this procedure](https://developer.chrome.com/extensions/getstarted#unpacked). 
+The Chrome Extension is still under development. To install it, [download the extension code](https://github.com/cptanalatriste/inflation-tracker-extension/releases/download/v0.2-alpha/thefed-for-jira.zip), unzip it and load it as an unpacked extension [following this procedure](https://developer.chrome.com/extensions/getstarted#unpacked). 
 
 ## Features
 After installing the extension, the inflation tracker button will be available in your browser. After clicking it you will see the following:
