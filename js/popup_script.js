@@ -429,7 +429,6 @@ function queryIssuesFromServer() {
 
 function startIssueLoading() {
     "use strict";
-
     var status = document.getElementById(statusId);
     status.textContent = "";
     status.classList.remove("info", "success", "warning", "error");
@@ -438,14 +437,22 @@ function startIssueLoading() {
         chrome.permissions.request({
             origins: [extentionOptions.host]
         }, function (granted) {
-            if (granted) {
-                queryIssuesFromServer();
+            if(chrome.runtime.lastError) {
+              showErrorMessage("Unexpected error while requesting permissions to host " +
+                  extentionOptions.host)
+              console.warn(chrome.runtime.lastError.message);
+            } else {
+              if (granted) {
+                  queryIssuesFromServer();
+              }
             }
         });
-    } else {
-        showErrorMessage("Please configure the extension options before connecting to the server.");
-    }
 
+
+    } else {
+        showErrorMessage("Please configure the extension options before connecting" +
+        " to the server.");
+    }
 
 }
 
