@@ -27,7 +27,7 @@ Per issue, you can see the reputation score of the reporter in the "Score" colum
 ![alt text](https://github.com/cptanalatriste/inflation-tracker-extension/blob/master/img/screenshots/reporters.PNG?raw=true "Reputation Report")
 
 ## The Priority Inflation Game
-This tool is the outcome of a research project on game-theoretic analysis of software processes. If you want to get into details, feel free to visit [our project page](http://ttendency.cs.ucl.ac.uk/projects/priority_inflation/index.html).
+This tool is the outcome of a research project on game-theoretic analysis of software processes. If you want to get into details, feel free to visit [our project page](https://cptanalatriste.github.io/priority-inflation-site/).
 
 ## Questions, issues or support?
 Feel free to contact me at c.gavidia@cs.ucl.ac.uk .
